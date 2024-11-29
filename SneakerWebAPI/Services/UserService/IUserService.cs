@@ -1,8 +1,13 @@
-﻿namespace SneakerWebAPI.Services.UserService
+﻿using SneakerWebAPI.DTOs;
+
+namespace SneakerWebAPI.Services.UserService
 {
     public interface IUserService
     {
-        string GetMyName();
+        public string GetMyName();
+        public Task RegisterUser(UserSignup request);
+        public Task LoginUser(LoginRequest request);
+        public Task UpdateUserAsync(User user);
   
     }
 }

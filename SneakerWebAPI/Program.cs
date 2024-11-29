@@ -13,6 +13,7 @@ using Swashbuckle.AspNetCore.Filters;
 using SneakerWebAPI.Services.UserService;
 using SneakerWebAPI.Services.CardService;
 using SneakerWebAPI.Services.SneakerService;
+using System.Reflection.Metadata.Ecma335;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,13 +54,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
             .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
             ValidateIssuer = false,
-            ValidateAudience = false
+            ValidateAudience = false,
+            ValidateLifetime = true
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                context.Request.Cookies.TryGetValue("authToken", out var token);
+                if (!string.IsNullOrEmpty(token))
+                    context.Token = token;
+
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddCors(options => options.AddPolicy(name: "NgOrigins", 
     policy => 
     {
-        policy.WithOrigins("https://sneaker-45ef9.web.app","http://localhost:4200").AllowAnyMethod().AllowAnyHeader();
+        policy.WithOrigins("https://sneaker-45ef9.web.app","http://localhost:4200").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
      }
     ));
 

@@ -49,14 +49,8 @@ namespace SneakerWebAPI.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserSignup request)
         {
-            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
-
-            user.Username = request.Username;
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
-            _context.users.Add(user);
-            await _context.SaveChangesAsync();
-            return Ok(await _context.users.ToListAsync());
+            await _userService.RegisterUser(request);
+            return Ok("User Registered Successfully");
         }
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(UserSignup request)
@@ -64,56 +58,41 @@ namespace SneakerWebAPI.Controllers
 
             var userlogin = await _context.users.FirstOrDefaultAsync(u => u.Username == request.Username);
             Console.WriteLine(userlogin);
-            if (userlogin == null)
+            if (userlogin == null || !VerifyPassword(request.Password, userlogin.PasswordHash, userlogin.PasswordSalt))
             {
-                return BadRequest("Account not found");
-            }
-            if (!VerifyPassword(request.Password, userlogin.PasswordHash, userlogin.PasswordSalt))
-            {
-                return BadRequest("Wrong password or Email");
+                return BadRequest("Wrong Email or Password");
             }
 
+            user = userlogin;
             string token = CreateToken(userlogin);
 
             var refreshToken = GenerateRefreshToken();
-            SetRefreshToken(refreshToken);
+            SetRefreshTokenAsync(refreshToken);
             return Ok(token);
         }
         [HttpPost("refresh-token")]
         public async Task<ActionResult<string>> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if (!user.RefreshToken.Equals(refreshToken))
+            if (string.IsNullOrEmpty(refreshToken))
             {
                 return Unauthorized("Invalid refresh token.");
             }
-            else if (user.TokenExpires < DateTime.Now)
+
+            var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == refreshToken);
+            if(user == null || user.TokenExpires < DateTime.UtcNow)
             {
-                return Unauthorized("Token expired");
+                return Unauthorized("INvalid or Expired refresh token.");
             }
+
             string token = CreateToken(user);
             var newRefreshToken = GenerateRefreshToken();
-            SetRefreshToken(newRefreshToken);
+
+
+            SetRefreshTokenAsync(newRefreshToken);
             return Ok(token);
 
 
-        }
-        [HttpPost("logout")]
-        public async Task<ActionResult<string>> Logout()
-        {
-            // Invalidate the user's refresh token (set it to null in the database).
-            var user = await _context.users.FirstOrDefaultAsync(u => u.Username == User.Identity.Name);
-            if (user != null)
-            {
-                user.RefreshToken = null;
-                await _context.SaveChangesAsync();
-            }
-
-            // Clear the refresh token cookie from the response.
-            Response.Cookies.Delete("refreshToken");
-
-            // Optionally, you can also invalidate the user's access token on the client-side.
-            return Ok(user);
         }
         private RefreshToken GenerateRefreshToken()
         {
@@ -126,18 +105,24 @@ namespace SneakerWebAPI.Controllers
             };
             return refreshToken;
         }
-        private void SetRefreshToken(RefreshToken newRefreshToken)
+        private async Task SetRefreshTokenAsync(RefreshToken newRefreshToken)
         {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = newRefreshToken.Expires
-            };
-            Response.Cookies.Append("refreshToken", newRefreshToken.Token, cookieOptions);
+
+            Response.Cookies.Append("refreshToken", newRefreshToken.Token,
+               new CookieOptions
+               {
+                   Expires = DateTimeOffset.UtcNow.AddDays(7),
+                   HttpOnly = true,
+                   IsEssential = true,
+                   Secure = true,
+                   SameSite = SameSiteMode.None
+               });
 
             user.RefreshToken = newRefreshToken.Token;
             user.TokenCreated = newRefreshToken.Created;
             user.TokenExpires = newRefreshToken.Expires;
+            _context.users.Update(user);
+            await _context.SaveChangesAsync();
         }
         private string CreateToken(User user)
         {
@@ -154,6 +139,39 @@ namespace SneakerWebAPI.Controllers
 
             return jwt;
         }
+        private async Task<User> GetAuthenticatedUser()
+        {
+            var token = Request.Cookies["authToken"];
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == token);
+            if (user == null || user.TokenExpires < DateTime.Now)
+                return null;
+
+            return user;
+        }
+        [HttpGet("isAuthenticated")]
+        public async Task<IActionResult> IsAuthenticated()
+        {
+            var user = await GetAuthenticatedUser();
+            if (user == null)
+                return Unauthorized("Invalid or expired token");
+
+            return Ok(true);
+        }
+
+        [HttpGet("GetUserData")]
+        public async Task<IActionResult> GetUserDate()
+        {
+            var user = await GetAuthenticatedUser();
+            if (user == null)
+                return Unauthorized("Not authenticated");
+
+            return Ok(user);
+        }
+
+
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512())
