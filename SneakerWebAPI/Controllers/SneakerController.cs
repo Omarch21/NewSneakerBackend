@@ -46,7 +46,7 @@ namespace SneakerWebAPI.Controllers
 
 
 
-                string searchQuery = sneaker.Silhouette + " " + sneaker.Nickname;
+               string searchQuery = "mens air jordan 11 retro bred";
             ChromeOptions chromeOptions = new ChromeOptions();
             chromeOptions.AddArgument("--headless");
             IWebDriver driver = new ChromeDriver(chromeOptions);

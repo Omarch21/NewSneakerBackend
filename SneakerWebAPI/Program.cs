@@ -14,6 +14,7 @@ using SneakerWebAPI.Services.UserService;
 using SneakerWebAPI.Services.CardService;
 using SneakerWebAPI.Services.SneakerService;
 using System.Reflection.Metadata.Ecma335;
+using SneakerWebAPI.Services.TokenService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,10 +23,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ISneakerService, SneakerService>();
-
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
@@ -55,18 +56,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
             ValidateIssuer = false,
             ValidateAudience = false,
-            ValidateLifetime = true
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                context.Request.Cookies.TryGetValue("authToken", out var token);
-                if (!string.IsNullOrEmpty(token))
-                    context.Token = token;
-
-                return Task.CompletedTask;
-            }
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddCors(options => options.AddPolicy(name: "NgOrigins", 

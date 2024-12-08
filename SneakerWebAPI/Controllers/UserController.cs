@@ -10,6 +10,16 @@ using SneakerWebAPI.Services.UserService;
 using SneakerWebAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using SneakerWebAPI;
+using SneakerWebAPI.Services.TokenService;
+using SneakerWebAPI.DTOs;
+using System.Linq;
+using HtmlAgilityPack;
+using Newtonsoft.Json.Linq;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium;
+using System.Net.Http;
+using System.Xml;
+using PuppeteerSharp;
 
 namespace SneakerWebAPI.Controllers
 {
@@ -21,11 +31,15 @@ namespace SneakerWebAPI.Controllers
         private readonly IConfiguration _configuration;
         private readonly DataContext _context;
         private readonly IUserService _userService;
-        public UserController(IConfiguration configuration, IUserService userService, DataContext context)
+        private readonly ITokenService _tokenService;
+        private readonly HttpClient _httpClient;
+        public UserController(IConfiguration configuration, IUserService userService, DataContext context, ITokenService tokenService, HttpClient httpClient)
         {
             _configuration = configuration;
             _userService = userService;
             _context = context;
+            _tokenService = tokenService;
+            _httpClient = httpClient;
         }
 
 
@@ -46,102 +60,91 @@ namespace SneakerWebAPI.Controllers
             }
             return Ok("No User Found");
         }
+
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserSignup request)
         {
-            await _userService.RegisterUser(request);
+            await _userService.RegisterUserAsync(request);
             return Ok("User Registered Successfully");
         }
+
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserSignup request)
+        public async Task<ActionResult<string>> Login(LoginRequest request)
         {
 
-            var userlogin = await _context.users.FirstOrDefaultAsync(u => u.Username == request.Username);
-            Console.WriteLine(userlogin);
-            if (userlogin == null || !VerifyPassword(request.Password, userlogin.PasswordHash, userlogin.PasswordSalt))
+            var userlogin = await _userService.GetUserByUsernameAsync(request.Username);
+            if (userlogin == null || !_userService.VerifyPassword(request.Password, userlogin.PasswordHash, userlogin.PasswordSalt))
             {
                 return BadRequest("Wrong Email or Password");
             }
 
             user = userlogin;
-            string token = CreateToken(userlogin);
+            
+            var accessToken = _tokenService.CreateToken(userlogin);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user);
 
-            var refreshToken = GenerateRefreshToken();
-            SetRefreshTokenAsync(refreshToken);
-            return Ok(token);
-        }
-        [HttpPost("refresh-token")]
-        public async Task<ActionResult<string>> RefreshToken()
-        {
-            var refreshToken = Request.Cookies["refreshToken"];
-            if (string.IsNullOrEmpty(refreshToken))
-            {
-                return Unauthorized("Invalid refresh token.");
-            }
-
-            var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == refreshToken);
-            if(user == null || user.TokenExpires < DateTime.UtcNow)
-            {
-                return Unauthorized("INvalid or Expired refresh token.");
-            }
-
-            string token = CreateToken(user);
-            var newRefreshToken = GenerateRefreshToken();
-
-
-            SetRefreshTokenAsync(newRefreshToken);
-            return Ok(token);
-
-
-        }
-        private RefreshToken GenerateRefreshToken()
-        {
-            var refreshToken = new RefreshToken
-            {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                Expires = DateTime.Now.AddDays(7),
-                Created = DateTime.Now
-
-            };
-            return refreshToken;
-        }
-        private async Task SetRefreshTokenAsync(RefreshToken newRefreshToken)
-        {
-
-            Response.Cookies.Append("refreshToken", newRefreshToken.Token,
+            Response.Cookies.Append("refreshToken", refreshToken.Token,
                new CookieOptions
                {
-                   Expires = DateTimeOffset.UtcNow.AddDays(7),
                    HttpOnly = true,
                    IsEssential = true,
                    Secure = true,
                    SameSite = SameSiteMode.None
                });
 
-            user.RefreshToken = newRefreshToken.Token;
-            user.TokenCreated = newRefreshToken.Created;
-            user.TokenExpires = newRefreshToken.Expires;
-            _context.users.Update(user);
-            await _context.SaveChangesAsync();
+            return Ok(accessToken);
         }
-        private string CreateToken(User user)
+
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult> RefreshToken()
         {
-            List<Claim> claims = new List<Claim>
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                new Claim(ClaimTypes.Name,user.Username)
+                return BadRequest("Invalid refresh token.");
+            }
 
-         };
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value));
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == refreshToken);
+            if(user == null || user.TokenExpires < DateTime.UtcNow)
+            {
+                return BadRequest("Invalid or Expired refresh token.");
+            }
 
-            var token = new JwtSecurityToken(claims: claims, expires: DateTime.Now.AddDays(1), signingCredentials: cred);
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+            var token = _tokenService.CreateToken(user);
 
-            return jwt;
+            return Ok(token);
         }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> LogoutUser()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            if(!string.IsNullOrEmpty(refreshToken))
+            {
+                var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == refreshToken);
+                if (user != null)
+                {
+                    user.RefreshToken = null;
+                    user.TokenExpires = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            Response.Cookies.Append("refreshToken", "", new CookieOptions
+            {
+                HttpOnly = true,
+                IsEssential = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1)
+            });
+
+            return Ok(new { message = "Logged out successfully", Success = true});
+        }
+
         private async Task<User> GetAuthenticatedUser()
         {
-            var token = Request.Cookies["authToken"];
+            var token = Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(token))
                 return null;
 
@@ -151,8 +154,10 @@ namespace SneakerWebAPI.Controllers
 
             return user;
         }
+
+
         [HttpGet("isAuthenticated")]
-        public async Task<IActionResult> IsAuthenticated()
+        public async Task<ActionResult<bool>> IsAuthenticated()
         {
             var user = await GetAuthenticatedUser();
             if (user == null)
@@ -161,6 +166,7 @@ namespace SneakerWebAPI.Controllers
             return Ok(true);
         }
 
+        [Authorize]
         [HttpGet("GetUserData")]
         public async Task<IActionResult> GetUserDate()
         {
@@ -171,23 +177,6 @@ namespace SneakerWebAPI.Controllers
             return Ok(user);
         }
 
-
-        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
-        {
-            using (var hmac = new HMACSHA512())
-            {
-                passwordSalt = hmac.Key;
-                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            }
-        }
-        private bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
-        {
-            using (var hmac = new HMACSHA512(passwordSalt))
-            {
-                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-                return computedHash.SequenceEqual(passwordHash);
-            }
-        }
         [HttpPut]
         public async Task<ActionResult<User>> UpdateUser(User user)
         {
@@ -196,11 +185,39 @@ namespace SneakerWebAPI.Controllers
             {
                 return BadRequest("User not found");
             }
-            Console.WriteLine(user.PhoneNumber);
-            newuser.Email = user.Email;
-            newuser.PhoneNumber = user.PhoneNumber;
-            await _context.SaveChangesAsync();
+            await _userService.UpdateUserAsync(newuser);
             return Ok(newuser);
+
+        }
+
+        [HttpPost("Sneaker")]
+        public async Task<IActionResult> Get1(SneakerSearchRequest request)
+        {
+            string searchQuery = request.Search;
+            string searchUrl = $"https://www.flightclub.com/catalogsearch/result?query={Uri.EscapeDataString(searchQuery)}";
+
+            //await new BrowserFetcher().DownloadAsync();
+            using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true }))
+            {
+                var page = await browser.NewPageAsync();
+                await page.GoToAsync(searchUrl);
+                await page.WaitForSelectorAsync(".LinkCTA__StyledLink-fc-web__sc-1wc5x2x-0");
+                var items = await page.EvaluateFunctionAsync<List<dynamic>>(@"
+                                () => {
+                                const elements = Array.from(document.querySelectorAll('.LinkCTA__StyledLink-fc-web__sc-1wc5x2x-0'));
+                                return elements.slice(0,3).map(el=>({
+                                link: el.href || 'No link',
+                                imageLink: el.querySelector('img')?.src || 'No image',
+                                cost: el.querySelector('[data-qa=""ProductItemPrice""]')?.textContent.trim() || 'No cost',
+                                name: el.querySelector('[data-qa=""ProductItemTitle""]')?.textContent.trim() || 'No name',
+                                brand: el.querySelector('[data-qa=""ProductItemBrandName""]')?.textContent.trim() || 'No brand'
+                                }));}");
+                foreach(var item in items)
+                {
+                    Console.WriteLine(item);
+                }
+                return Ok(items);
+            }
 
         }
     }

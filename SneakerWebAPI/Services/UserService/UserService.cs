@@ -15,13 +15,11 @@ namespace SneakerWebAPI.Services.UserService
         public static User user = new User();
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DataContext _context;
-        private readonly ITokenService _tokenService;
 
-        public UserService(IHttpContextAccessor httpContextAccessor, DataContext context, ITokenService tokenService)
+        public UserService(IHttpContextAccessor httpContextAccessor, DataContext context)
         {
             _httpContextAccessor = httpContextAccessor;
             _context = context;
-            _tokenService = tokenService;
         }
 
         public string GetMyName()
@@ -34,7 +32,7 @@ namespace SneakerWebAPI.Services.UserService
             return result;
         }
 
-        public async Task RegisterUser(UserSignup request)
+        public async Task RegisterUserAsync(UserSignup request)
         {
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
@@ -47,22 +45,6 @@ namespace SneakerWebAPI.Services.UserService
 
             _context.users.Add(user);
             await _context.SaveChangesAsync();
-        }
-
-        public async Task LoginUser(LoginRequest request)
-        {
-            var userlogin = await _context.users.FirstOrDefaultAsync(u => u.Username == request.Username);
-            if (userlogin == null || !VerifyPassword(request.Password, userlogin.PasswordHash, userlogin.PasswordSalt))
-            {
-                return BadRequest("Wrong Email or Password");
-            }
-
-            user = userlogin;
-            string token = _tokenService.CreateToken(userlogin);
-
-            var refreshToken = _tokenService.GenerateRefreshToken();
-            SetRefreshTokenAsync(refreshToken);
-            return Ok(token);
         }
 
         public async Task<User?> UpdateUserAsync(User updatedUser)
@@ -82,6 +64,11 @@ namespace SneakerWebAPI.Services.UserService
             return user;
         }
 
+        public async Task<User?> GetUserByUsernameAsync(string username)
+        {
+            return await _context.users.FirstOrDefaultAsync(u => u.Username == username);
+        }
+
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512())
@@ -91,7 +78,7 @@ namespace SneakerWebAPI.Services.UserService
             }
         }
 
-        private bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
+        public bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512(passwordSalt))
             {
