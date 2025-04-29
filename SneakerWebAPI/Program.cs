@@ -15,6 +15,8 @@ using SneakerWebAPI.Services.CardService;
 using SneakerWebAPI.Services.SneakerService;
 using System.Reflection.Metadata.Ecma335;
 using SneakerWebAPI.Services.TokenService;
+using SneakerWebAPI.Services.NewsService;
+using SneakerWebAPI.Services.SneakerReleaseService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +29,8 @@ builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ISneakerService, SneakerService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddScoped<ISneakerReleaseService, SneakerReleaseService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
@@ -69,10 +73,13 @@ builder.Services.AddCors(options => options.AddPolicy(name: "NgOrigins",
 
 var app = builder.Build();
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+app.Urls.Add($"http://*:{port}");
+app.MapGet("/", () => "Hello from render");
 //Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
+app.UseSwagger();
     app.UseSwaggerUI();
 //}
 SchedulerConfig.Start();

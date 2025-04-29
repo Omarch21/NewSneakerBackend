@@ -2,7 +2,7 @@
 
 namespace SneakerWebAPI
 {
-    public class SnkrPriceHistory
+    public class SneakerPriceHistory
     {
         public int Id { set; get; }
         [ForeignKey("SneakerId")]

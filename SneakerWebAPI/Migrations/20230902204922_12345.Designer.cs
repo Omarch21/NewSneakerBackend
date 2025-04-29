@@ -83,7 +83,7 @@ namespace SneakerWebAPI.Migrations
                     b.ToTable("Sneakers");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.SnkrPriceHistory", b =>
+            modelBuilder.Entity("SneakerWebAPI.SneakerPriceHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,7 +104,7 @@ namespace SneakerWebAPI.Migrations
 
                     b.HasIndex("SneakerId");
 
-                    b.ToTable("SnkrPrices");
+                    b.ToTable("SneakerPrices");
                 });
 
             modelBuilder.Entity("SneakerWebAPI.User", b =>
@@ -153,7 +153,7 @@ namespace SneakerWebAPI.Migrations
                     b.ToTable("users");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.SnkrPriceHistory", b =>
+            modelBuilder.Entity("SneakerWebAPI.SneakerPriceHistory", b =>
                 {
                     b.HasOne("SneakerWebAPI.Sneaker", "sneaker")
                         .WithMany()

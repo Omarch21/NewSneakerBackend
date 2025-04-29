@@ -2,6 +2,7 @@
 {
     public interface ISneakerService
     {
-        float GetPrice(string size,string url);
+        Task<float> GetPrice(string size,string url);
+        Task<Sneaker> GetSneakerInfo(string url);
     }
 }

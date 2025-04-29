@@ -11,13 +11,13 @@ namespace SneakerWebAPI.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateIndex(
-                name: "IX_SnkrPrices_SneakerId",
-                table: "SnkrPrices",
+                name: "IX_SneakerPrices_SneakerId",
+                table: "SneakerPrices",
                 column: "SneakerId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_SnkrPrices_Sneakers_SneakerId",
-                table: "SnkrPrices",
+                name: "FK_SneakerPrices_Sneakers_SneakerId",
+                table: "SneakerPrices",
                 column: "SneakerId",
                 principalTable: "Sneakers",
                 principalColumn: "Id",
@@ -28,12 +28,12 @@ namespace SneakerWebAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_SnkrPrices_Sneakers_SneakerId",
-                table: "SnkrPrices");
+                name: "FK_SneakerPrices_Sneakers_SneakerId",
+                table: "SneakerPrices");
 
             migrationBuilder.DropIndex(
-                name: "IX_SnkrPrices_SneakerId",
-                table: "SnkrPrices");
+                name: "IX_SneakerPrices_SneakerId",
+                table: "SneakerPrices");
         }
     }
 }

@@ -20,6 +20,9 @@ using OpenQA.Selenium;
 using System.Net.Http;
 using System.Xml;
 using PuppeteerSharp;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace SneakerWebAPI.Controllers
 {
@@ -79,7 +82,7 @@ namespace SneakerWebAPI.Controllers
             }
 
             user = userlogin;
-            
+
             var accessToken = _tokenService.CreateToken(userlogin);
             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user);
 
@@ -105,7 +108,7 @@ namespace SneakerWebAPI.Controllers
             }
 
             var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == refreshToken);
-            if(user == null || user.TokenExpires < DateTime.UtcNow)
+            if (user == null || user.TokenExpires < DateTime.UtcNow)
             {
                 return BadRequest("Invalid or Expired refresh token.");
             }
@@ -119,7 +122,7 @@ namespace SneakerWebAPI.Controllers
         public async Task<IActionResult> LogoutUser()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if(!string.IsNullOrEmpty(refreshToken))
+            if (!string.IsNullOrEmpty(refreshToken))
             {
                 var user = await _context.users.FirstOrDefaultAsync(c => c.RefreshToken == refreshToken);
                 if (user != null)
@@ -139,7 +142,7 @@ namespace SneakerWebAPI.Controllers
                 Expires = DateTime.UtcNow.AddDays(-1)
             });
 
-            return Ok(new { message = "Logged out successfully", Success = true});
+            return Ok(new { message = "Logged out successfully", Success = true });
         }
 
         private async Task<User> GetAuthenticatedUser()
@@ -181,7 +184,7 @@ namespace SneakerWebAPI.Controllers
         public async Task<ActionResult<User>> UpdateUser(User user)
         {
             var newuser = await _context.users.FindAsync(user.Id);
-            if(newuser == null)
+            if (newuser == null)
             {
                 return BadRequest("User not found");
             }
@@ -202,7 +205,7 @@ namespace SneakerWebAPI.Controllers
                 var page = await browser.NewPageAsync();
                 await page.GoToAsync(searchUrl);
                 await page.WaitForSelectorAsync(".LinkCTA__StyledLink-fc-web__sc-1wc5x2x-0");
-                var items = await page.EvaluateFunctionAsync<List<dynamic>>(@"
+                var items = await page.EvaluateFunctionAsync<List<FetchedSneakerData>>(@"
                                 () => {
                                 const elements = Array.from(document.querySelectorAll('.LinkCTA__StyledLink-fc-web__sc-1wc5x2x-0'));
                                 return elements.slice(0,3).map(el=>({
@@ -212,13 +215,25 @@ namespace SneakerWebAPI.Controllers
                                 name: el.querySelector('[data-qa=""ProductItemTitle""]')?.textContent.trim() || 'No name',
                                 brand: el.querySelector('[data-qa=""ProductItemBrandName""]')?.textContent.trim() || 'No brand'
                                 }));}");
-                foreach(var item in items)
+
+                string pattern = @"'([^']*)'";
+                foreach (var item in items)
                 {
-                    Console.WriteLine(item);
+                    string[] jordanNumber = item.Name.Split(' ');
+                    int jordanNumberIndex = Array.IndexOf(jordanNumber, "Jordan");
+                    item.JordanNumber = (jordanNumberIndex >= 0) ? int.Parse(jordanNumber[++jordanNumberIndex]) : 0;
+                    Match match = Regex.Match(item.Name, pattern);
+                    item.Nickname = match.Groups[1].Value;
                 }
                 return Ok(items);
             }
 
+        }
+        [HttpPost("info")]
+        public async Task<IActionResult> Get1More(Sneaker request)
+        {
+            Console.WriteLine(request);
+            return Ok();
         }
     }
 }

@@ -85,7 +85,7 @@ namespace SneakerWebAPI.Migrations
                     b.ToTable("Sneakers");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.SnkrPriceHistory", b =>
+            modelBuilder.Entity("SneakerWebAPI.SneakerPriceHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,7 +104,7 @@ namespace SneakerWebAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SnkrPrices");
+                    b.ToTable("SneakerPrices");
                 });
 
             modelBuilder.Entity("SneakerWebAPI.User", b =>

@@ -37,7 +37,7 @@ namespace SneakerWebAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnkrPrices",
+                name: "SneakerPrices",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -48,7 +48,7 @@ namespace SneakerWebAPI.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SnkrPrices", x => x.Id);
+                    table.PrimaryKey("PK_SneakerPrices", x => x.Id);
                 });
         }
 
@@ -59,7 +59,7 @@ namespace SneakerWebAPI.Migrations
                 name: "Sneakers");
 
             migrationBuilder.DropTable(
-                name: "SnkrPrices");
+                name: "SneakerPrices");
         }
     }
 }

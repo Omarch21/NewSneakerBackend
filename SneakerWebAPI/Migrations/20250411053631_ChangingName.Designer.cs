@@ -12,8 +12,8 @@ using SneakerWebAPI.Data;
 namespace SneakerWebAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230830034606_foreigns")]
-    partial class foreigns
+    [Migration("20250411053631_ChangingName")]
+    partial class ChangingName
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,46 @@ namespace SneakerWebAPI.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("SneakerWebAPI.Card", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CardGame")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CardName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CardType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhotoURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Rarity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResellURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("price")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cards");
+                });
 
             modelBuilder.Entity("SneakerWebAPI.Sneaker", b =>
                 {
@@ -42,6 +82,9 @@ namespace SneakerWebAPI.Migrations
 
                     b.Property<string>("Creator")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("Holding")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Nickname")
                         .IsRequired()
@@ -130,18 +173,19 @@ namespace SneakerWebAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<byte[]>("PasswordSalt")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
-                    b.Property<string>("RefreshToken")
+                    b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("TokenCreated")
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TokenCreated")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("TokenExpires")

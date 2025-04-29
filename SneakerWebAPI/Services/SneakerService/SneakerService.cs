@@ -1,7 +1,9 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Playwright;
 using Newtonsoft.Json.Linq;
+using PuppeteerSharp;
 using System.Net.Http;
 
 namespace SneakerWebAPI.Services.SneakerService
@@ -9,70 +11,134 @@ namespace SneakerWebAPI.Services.SneakerService
     public class SneakerService : ISneakerService
     {
         private readonly HttpClient _client;
+        private readonly IPlaywright _playwright;
         public SneakerService(HttpClient client)
         {
             _client = client;
         }
-        public float GetPrice(string size1, string url)
+
+        public async Task<float> GetPrice(string size, string url)
         {
+            try
+            {
 
-            
-                var size = size1;
-                string source = url;
-                var response = _client.GetAsync(source).Result;
-                string shoe = response.Content.ReadAsStringAsync().Result;
-                HtmlDocument document = new HtmlDocument();
-                document.LoadHtml(shoe);
-                float price = 0;
+                using var playwright = await Playwright.CreateAsync();
+                await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions 
+                { 
+                    Headless = true
+                });
 
-                string pricefinder = "//script[contains(.,'\"size\":" + size + "')][contains(.,'\"price\":')]";
-                HtmlNode scriptNode = document.DocumentNode.SelectSingleNode(pricefinder);
-
-                if (scriptNode != null)
+                var context = await browser.NewContextAsync(new BrowserNewContextOptions
                 {
-                    // Get the JSON part from the script content
-                    string jsonString = scriptNode.InnerText;
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+                    ViewportSize = new ViewportSize { Width = 1280, Height = 800 },
+                    Locale = "en-US"
+                });
+                var page = await context.NewPageAsync();
 
-                    // Parse the JSON to a JObject
-                    JObject jsonObj = JObject.Parse(jsonString);
+                await page.GotoAsync(url);
 
-                    // Get the offers array from the JSON object
-                    JArray offersArray = jsonObj["offers"]["offers"] as JArray;
+                var html = await page.ContentAsync();
+                var document = new HtmlDocument();
+                document.LoadHtml(html);
 
-                    if (offersArray != null)
-                    {
-                        // Find the offer for size 8.5
-                        JObject offerForSize8_5 = offersArray.FirstOrDefault(o => o["size"].Value<string>() == "8.5") as JObject;
+                var scriptNode = document.DocumentNode.SelectSingleNode(
+                    $"//script[contains(., '\"size\":{size}') and contains(., '\"price\":')]"
+                );
+                if (scriptNode == null)
+                    return -2; // Script not found
 
-                        if (offerForSize8_5 != null)
-                        {
-                            // Get the price for size 8.5 from the offer object
-                            string size8_5Price = offerForSize8_5["price"].Value<string>();
-                            price = float.Parse(size8_5Price);
-                            
-                            return price;
-                        }
-                        else
-                        {
-                            return 0 ;
-                        }
-                    }
-                    else
-                    {
-                        return -1;
-                    }
-                }
-                else
-                {
-                 return -2;
-                }
+                // Extract JSON content from the script (you may need to extract actual JSON string)
+                string jsonText = scriptNode.InnerText.Trim();
 
+                // Try to parse the script content into JSON
+                JObject jsonObj = JObject.Parse(jsonText);
 
-            
+                var offersArray = jsonObj["offers"]?["offers"] as JArray;
+                if (offersArray == null)
+                    return -1; // Offers not found
 
+                var offer = offersArray
+                    .FirstOrDefault(o => o["size"]?.ToString() == size) as JObject;
 
+                if (offer == null)
+                    return 0; // No matching size
 
-        
+                var priceStr = offer["price"]?.ToString();
+                return float.TryParse(priceStr, out float price) ? price : 0; 
+                /*var response = await _client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var html = await response.Content.ReadAsStringAsync();
+
+                var document = new HtmlDocument();
+                document.LoadHtml(html);
+
+                // Look for the script tag containing both "size" and "price"
+                var scriptNode = document.DocumentNode.SelectSingleNode(
+                    $"//script[contains(., '\"size\":{size}') and contains(., '\"price\":')]"
+                );
+
+                if (scriptNode == null)
+                    return -2; // Script not found
+
+                // Extract JSON content from the script (you may need to extract actual JSON string)
+                string jsonText = scriptNode.InnerText.Trim();
+
+                // Try to parse the script content into JSON
+                JObject jsonObj = JObject.Parse(jsonText);
+
+                var offersArray = jsonObj["offers"]?["offers"] as JArray;
+                if (offersArray == null)
+                    return -1; // Offers not found
+
+                var offer = offersArray
+                    .FirstOrDefault(o => o["size"]?.ToString() == size) as JObject;
+
+                if (offer == null)
+                    return 0; // No matching size
+
+                var priceStr = offer["price"]?.ToString();
+                return float.TryParse(priceStr, out float price) ? price : 0;*/
+            }
+            catch (Exception ex)
+            {
+                // You could log the exception here
+                return -999; // General failure
+            }
+        }
+
+        public async Task<Sneaker> GetSneakerInfo(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                return new Sneaker();
+
+            Sneaker sneaker = new Sneaker();
+            using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true }))
+            {
+                var page = await browser.NewPageAsync();
+                await page.GoToAsync(url);
+                await page.WaitForSelectorAsync("div[data-qa='ProductDescriptionText'] p");
+
+                var elementWithDescription = await page.QuerySelectorAsync("div[data-qa='ProductDescriptionText'] p");
+                sneaker.ProductDesc = await elementWithDescription.EvaluateFunctionAsync<string>("el => el.innerText");
+
+                var elementWithColorway = await page.QuerySelectorAsync("span[data-qa='ProductColorway']");
+                var colorway = await elementWithColorway.EvaluateFunctionAsync<string>("el => el.innerText");
+                int index = colorway.IndexOf(": ") + 2;
+                sneaker.Colorway = colorway.Substring(index);
+
+                var elementWithReleaseDate = await page.QuerySelectorAsync("span[data-qa='ProductReleaseDate']");
+                var releaseDate = await elementWithReleaseDate.EvaluateFunctionAsync<string>("el => el.innerText");
+                index = releaseDate.IndexOf(": ") + 2;
+                sneaker.ReleaseDate = releaseDate.Substring(index);
+
+                var elementWithSKU = await page.QuerySelectorAsync("span[data-qa='ProductSku']");
+                var sku = await elementWithSKU.EvaluateFunctionAsync<string>("el => el.innerText");
+                index = sku.IndexOf(": ") + 2;
+                sneaker.SKU = sku.Substring(index);
+            }
+            return sneaker;
         }
     }
 }

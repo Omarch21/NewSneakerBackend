@@ -7,7 +7,7 @@ namespace SneakerWebAPI
 {
     public class ResellUpdater : IJob
     {
-        private readonly string apistring = "https://localhost:7017/api/SneakerResellUpdater";
+        private readonly string apistring = "http://localhost:5000/api/SneakerResellUpdater";
 
         public async Task Execute(IJobExecutionContext context)
         {

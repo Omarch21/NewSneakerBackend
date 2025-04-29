@@ -7,18 +7,16 @@ namespace SneakerWebAPI
 {
     public class SneakerPricePoster : IJob
     {
-        private readonly string apistring = "https://localhost:7017/api/SnkrPriceHistories";
+        private readonly string apistring = "http://localhost:5000/api/SneakerPriceHistories";
         public async Task Execute(IJobExecutionContext context)
         {
             try
             {
                 using (var httpClient = new HttpClient())
                 {
-                    var web = await httpClient.GetAsync(apistring);
-                    var stringContent = new StringContent(JsonConvert.SerializeObject(web), Encoding.UTF8, "application/json");
-                    var response = await httpClient.PostAsync(apistring, stringContent);
+                    var response = await httpClient.PostAsync(apistring,new StringContent(""));
                     response.EnsureSuccessStatusCode();
-                    
+                    Console.WriteLine("Prices have been posted");
                 }
             }
             catch (Exception error)
