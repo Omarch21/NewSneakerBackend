@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Playwright;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
+using SneakerWebAPI.Data;
 using System.Net.Http;
 
 namespace SneakerWebAPI.Services.SneakerService
@@ -12,9 +13,11 @@ namespace SneakerWebAPI.Services.SneakerService
     {
         private readonly HttpClient _client;
         private readonly IPlaywright _playwright;
-        public SneakerService(HttpClient client)
+        private readonly DataContext _context;
+        public SneakerService(HttpClient client, DataContext context)
         {
             _client = client;
+            _context = context;
         }
 
         public async Task<float> GetPrice(string size, string url)
@@ -23,9 +26,11 @@ namespace SneakerWebAPI.Services.SneakerService
             {
 
                 using var playwright = await Playwright.CreateAsync();
+                Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", "/ms-playwright");
                 await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions 
                 { 
-                    Headless = true
+                    Headless = true,
+                    ExecutablePath = "/home/app/.cache/ms-playwright/chromium-1169/chrome-linux/headless_shell",
                 });
 
                 var context = await browser.NewContextAsync(new BrowserNewContextOptions
@@ -139,6 +144,37 @@ namespace SneakerWebAPI.Services.SneakerService
                 sneaker.SKU = sku.Substring(index);
             }
             return sneaker;
+        }
+
+        public async Task<List<SneakerPriceHistory>> PostSneakerPrices()
+        {
+            var shoes = await _context.Sneakers.ToListAsync();
+            List<SneakerPriceHistory> pricelist = new List<SneakerPriceHistory>();
+            if (shoes == null)
+                return new List<SneakerPriceHistory> { };
+            
+            foreach (var shoe1 in shoes)
+            {
+                string size = shoe1.Size.ToString();
+                string source = shoe1.ResellURL;
+                float price = await GetPrice(size, source);
+                shoe1.ResellPrice = price;
+                SneakerPriceHistory history = new SneakerPriceHistory()
+                {
+                    SneakerId = shoe1.Id,
+                    Date = DateTime.Now,
+                    Price = price
+                };
+
+                if (history != null)
+                {
+                    history.Price = price;
+                    pricelist.Add(history);
+                    _context.SneakerPrices.Add(history);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            return pricelist;
         }
     }
 }

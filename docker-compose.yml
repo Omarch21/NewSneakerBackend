@@ -1,0 +1,7 @@
+
+services:
+  sneakerwebapi:
+    image: sneakerwebapi
+    build:
+      context: .
+      dockerfile: SneakerWebAPI/Dockerfile

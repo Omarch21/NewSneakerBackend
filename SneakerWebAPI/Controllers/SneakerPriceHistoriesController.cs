@@ -57,36 +57,9 @@ namespace SneakerWebAPI.Controllers
         // POST: api/SnkrPriceHistories
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<SneakerPriceHistory>> PostSneakerPriceHistory()
+        public async Task<ActionResult<List<SneakerPriceHistory>>> PostSneakerPriceHistory()
         {
-            var shoes = await _context.Sneakers.ToListAsync();
-            List<SneakerPriceHistory> pricelist = new List<SneakerPriceHistory>();
-            if ((shoes == null))
-            {
-                return BadRequest("Sneaker was not Found");
-            }
-            foreach (var shoe1 in shoes)
-            {
-
-                string size = shoe1.Size.ToString();
-                string source = shoe1.ResellURL;
-                float price = await _sneakerservice.GetPrice(size, source);
-                shoe1.ResellPrice = price;
-                SneakerPriceHistory history = new SneakerPriceHistory()
-                {
-                    SneakerId = shoe1.Id,
-                    Date = DateTime.Now,
-                    Price = price
-                };
-                if (history != null)
-                {
-                    history.Price = price;
-                    pricelist.Add(history);
-                    _context.SneakerPrices.Add(history);
-                    await _context.SaveChangesAsync();
-                }
-            }
-            return Ok(pricelist);
+            return Ok(await _sneakerservice.PostSneakerPrices());
         }
 
         [HttpPost("{id}")]
