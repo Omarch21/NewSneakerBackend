@@ -29,7 +29,8 @@ namespace SneakerWebAPI.Services.SneakerService
                 Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", "/ms-playwright");
                 await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions 
                 { 
-                    Headless = true
+                    Headless = true,
+                    ExecutablePath = "/root/.cache/ms-playwright/chromium-1169/chrome-linux/chrome"
                 });
 
                 var context = await browser.NewContextAsync(new BrowserNewContextOptions
