@@ -68,7 +68,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddCors(options => options.AddPolicy(name: "NgOrigins", 
     policy => 
     {
-        policy.WithOrigins("https://sneaker-45ef9.web.app","http://localhost:4200").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+        policy.WithOrigins("https://sneakerui.onrender.com/", "http://localhost:4200").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
      }
     ));
 builder.Services.AddQuartz(q =>
