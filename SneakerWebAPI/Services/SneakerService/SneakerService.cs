@@ -109,6 +109,8 @@ namespace SneakerWebAPI.Services.SneakerService
             catch (Exception ex)
             {
                 // You could log the exception here
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex);
                 return -999; // General failure
             }
         }
