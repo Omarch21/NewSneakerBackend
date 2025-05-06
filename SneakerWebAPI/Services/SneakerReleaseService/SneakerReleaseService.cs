@@ -44,7 +44,7 @@ namespace SneakerWebAPI.Services.SneakerReleaseService
                     {
                         sneakerRelease.MoreInfoSource = "https://www.soleretriever.com/" + moreInfoSrc;
                     }
-                    var name = sneaker.SelectSingleNode(".//p[contains(@class, 'sm:h-[2.8em]')]").InnerText.Trim();
+                    var name = sneaker.SelectSingleNode(".//p[contains(@class, 'sm:h-[3em] mr-4')]").InnerText.Trim();
                     if (!string.IsNullOrEmpty(name))
                     {   
                         sneakerRelease.Name = HttpUtility.HtmlDecode(name);

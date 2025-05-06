@@ -83,9 +83,9 @@ builder.Services.AddQuartz(q =>
 builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 var app = builder.Build();
-var port = Environment.GetEnvironmentVariable("PORT") ?? "80";
-app.Urls.Add($"http://*:{port}");
-app.MapGet("/", () => "Hello from render");
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "80";
+//app.Urls.Add($"http://*:{port}");
+//app.MapGet("/", () => "Hello from render");
 //Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
