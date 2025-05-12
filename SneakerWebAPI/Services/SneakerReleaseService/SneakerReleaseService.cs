@@ -44,18 +44,19 @@ namespace SneakerWebAPI.Services.SneakerReleaseService
                     {
                         sneakerRelease.MoreInfoSource = "https://www.soleretriever.com/" + moreInfoSrc;
                     }
-                    var name = sneaker.SelectSingleNode(".//p[contains(@class, 'sm:h-[2.8em]')]").InnerText.Trim();
+                    var name = sneaker.SelectSingleNode(".//p[contains(@class, 'sm:h-[3em] mr-4')]").InnerText.Trim();
                     if (!string.IsNullOrEmpty(name))
-                    {   
+                    {
                         sneakerRelease.Name = HttpUtility.HtmlDecode(name);
                     }
-                    var date = sneaker.SelectSingleNode(".//p[contains(@class, 'dark:mix-blend-overlay text-black/50 dark:text-gray-100')]").InnerText.Trim();
+                    var date = sneaker.SelectSingleNode(".//p[contains(@class, 'dark:mix-blend-normal text-black dark:text-gray-100')]").InnerText.Trim();
                     if (!string.IsNullOrEmpty(date))
                     {
                         sneakerRelease.ReleaseDate = date;
                     }
-                    var cost = sneaker.SelectSingleNode(".//*[contains(text(), '$')]").InnerText.Trim().Replace("$","");
-                    if (!string.IsNullOrEmpty(cost)) {
+                    var cost = sneaker.SelectSingleNode(".//*[contains(text(), '$')]").InnerText.Trim().Replace("$", "");
+                    if (!string.IsNullOrEmpty(cost))
+                    {
                         sneakerRelease.Retail = int.Parse(cost);
                     }
                     var productCode = sneaker.SelectSingleNode(".//p[contains(@class, 'dark:mix-blend-overlay text-black/50 dark:text-white')]").InnerText.Trim();

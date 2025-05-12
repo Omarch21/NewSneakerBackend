@@ -17,6 +17,7 @@ using System.Reflection.Metadata.Ecma335;
 using SneakerWebAPI.Services.TokenService;
 using SneakerWebAPI.Services.NewsService;
 using SneakerWebAPI.Services.SneakerReleaseService;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,19 +71,27 @@ builder.Services.AddCors(options => options.AddPolicy(name: "NgOrigins",
         policy.WithOrigins("https://sneaker-45ef9.web.app","http://localhost:4200").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
      }
     ));
+builder.Services.AddQuartz(q =>
+{
+    q.ScheduleJob<SneakerPricePoster>(trigger => trigger
+        .WithIdentity("SneakerPricePosterTrigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+    );
+});
 
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 var app = builder.Build();
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.Urls.Add($"http://*:{port}");
-app.MapGet("/", () => "Hello from render");
+//var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+//app.Urls.Add($"http://*:{port}");
+//app.MapGet("/", () => "Hello from render");
 //Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
 app.UseSwagger();
     app.UseSwaggerUI();
 //}
-SchedulerConfig.Start();
 app.UseCors("NgOrigins");
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -92,23 +101,3 @@ app.MapControllers();
 
 app.Run();
 
-namespace SneakerWebApi
-{
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            var hostBuilder = CreateHostBuilder(args);
-            var host = hostBuilder.Build();
-            SchedulerConfig.Start();
-            await host.RunAsync();
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<Program>();
-            });
-    }
-}
