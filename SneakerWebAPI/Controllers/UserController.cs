@@ -1,28 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.NetworkInformation;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using SneakerWebAPI.Services.UserService;
 using SneakerWebAPI.Data;
 using Microsoft.EntityFrameworkCore;
-using SneakerWebAPI;
 using SneakerWebAPI.Services.TokenService;
 using SneakerWebAPI.DTOs;
-using System.Linq;
-using HtmlAgilityPack;
-using Newtonsoft.Json.Linq;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium;
-using System.Net.Http;
-using System.Xml;
 using PuppeteerSharp;
-using System.Text.Json.Serialization;
-using System.Text.Json;
 using System.Text.RegularExpressions;
+using SneakerWebAPI.Models;
+using SneakerWebAPI.Models.Sneaker;
 
 namespace SneakerWebAPI.Controllers
 {
@@ -54,7 +41,7 @@ namespace SneakerWebAPI.Controllers
             if (username != null)
             {
                 currentUser = _context.users.SingleOrDefault(u => u.Username == username);
-                User newuser = new SneakerWebAPI.User();
+                User newuser = new User();
                 newuser.Username = currentUser.Username;
                 newuser.Id = currentUser.Id;
                 newuser.Email = currentUser.Email;
@@ -194,7 +181,7 @@ namespace SneakerWebAPI.Controllers
         }
 
         [HttpPost("Sneaker")]
-        public async Task<IActionResult> Get1(SneakerSearchRequest request)
+        public async Task<IActionResult> Get1(SearchRequest request)
         {
             string searchQuery = request.Search;
             string searchUrl = $"https://www.flightclub.com/catalogsearch/result?query={Uri.EscapeDataString(searchQuery)}";
@@ -204,6 +191,8 @@ namespace SneakerWebAPI.Controllers
             {
                 var page = await browser.NewPageAsync();
                 await page.GoToAsync(searchUrl);
+                var a = await page.GetContentAsync();
+                Console.WriteLine(a);
                 await page.WaitForSelectorAsync(".LinkCTA__StyledLink-fc-web__sc-1wc5x2x-0");
                 var items = await page.EvaluateFunctionAsync<List<FetchedSneakerData>>(@"
                                 () => {
@@ -234,6 +223,77 @@ namespace SneakerWebAPI.Controllers
         {
             Console.WriteLine(request);
             return Ok();
+        }
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllItems(int userId)
+        {
+            List<BaseItem> allItems = new();
+
+            var games = await _context.Games.Where(c => c.UserId == userId).ToListAsync();
+            var sneakers = await _context.Sneakers.Where(c => c.UserId == userId).ToListAsync();
+            var cards = await _context.Cards.Where(c => c.UserId == userId).ToListAsync();
+            var pops = await _context.FunkoPops.Where(c => c.UserId == userId).ToListAsync();
+
+            var updatedSneakers = sneakers.Select(s =>
+            {
+                s.Name = $"{s.Brand} {s.Silhouette} {s.Name}";
+                return s;
+            }).ToList();
+
+            var updatedGames = games.Select(s =>
+            {
+                s.Name = $"{s.Console} {s.Name}";
+                return s;
+            }).ToList();
+
+            var updatedCards = cards.Select(s =>
+            {
+                s.Name = $"{s.CardGame} {s.Name}";
+                return s;
+            }).ToList();
+
+            allItems.AddRange(updatedSneakers);
+            allItems.AddRange(updatedGames);
+            allItems.AddRange(updatedCards);
+            allItems.AddRange(pops);
+            return Ok(allItems);
+        }
+
+        [HttpPost("sold")]
+        public async Task<IActionResult> ItemSold(ItemSoldRequest request)
+        {
+            switch (request.ItemType)
+            {
+                case "Sneaker":
+                    var sneaker = await _context.Sneakers.FindAsync(request.ItemId);
+                    if (sneaker == null)
+                        return NotFound();
+                    sneaker.Sold = true;
+                    break;
+                case "Game":
+                    var game = await _context.Games.FindAsync(request.ItemId);
+                    if (game == null)
+                        return NotFound();
+                    game.Sold = true;
+                    break;
+                case "Card":
+                    var card = await _context.Cards.FindAsync(request.ItemId);
+                    if (card == null)
+                        return NotFound();
+                    card.Sold = true;
+                    break;
+                case "FunkoPop":
+                    var funkoPop = await _context.FunkoPops.FindAsync(request.ItemId);
+                    if (funkoPop == null)
+                        return NotFound();
+                    funkoPop.Sold = true;
+                    break;
+                default:
+                    return BadRequest($"Invalid item type: {request.ItemType}");
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(true);
         }
     }
 }

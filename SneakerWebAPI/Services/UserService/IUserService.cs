@@ -1,4 +1,5 @@
 ﻿using SneakerWebAPI.DTOs;
+using SneakerWebAPI.Models;
 
 namespace SneakerWebAPI.Services.UserService
 {

@@ -22,7 +22,7 @@ namespace SneakerWebAPI.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("SneakerWebAPI.Card", b =>
+            modelBuilder.Entity("SneakerWebAPI.Models.Card.Card", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -34,35 +34,241 @@ namespace SneakerWebAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CardName")
-                        .IsRequired()
+                    b.Property<string>("CardType")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CardType")
+                    b.Property<string>("Condition")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhotoURL")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PurchasedFrom")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
                     b.Property<string>("Rarity")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<float?>("ResellPrice")
+                        .HasColumnType("real");
 
                     b.Property<string>("ResellURL")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Set")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Sold")
+                        .HasColumnType("bit");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<float>("price")
-                        .HasColumnType("real");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Cards");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.Sneaker", b =>
+            modelBuilder.Entity("SneakerWebAPI.Models.Card.CardPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CardId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<float>("Price")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CardId");
+
+                    b.ToTable("CardPrices");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.FunkoPop.FunkoPop", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Condition")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhotoURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PurchasedFrom")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReleaseDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float?>("ResellPrice")
+                        .HasColumnType("real");
+
+                    b.Property<string>("ResellURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Size")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Sold")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("FunkoPops");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.FunkoPop.FunkoPopPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FunkoPopId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Price")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FunkoPopId");
+
+                    b.ToTable("FunkoPopPrices");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Game.Game", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Condition")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Console")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhotoURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Publisher")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PurchasedFrom")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Rating")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReleaseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<float?>("ResellPrice")
+                        .HasColumnType("real");
+
+                    b.Property<string>("ResellURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Sold")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Games");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Game.GamePrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Price")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("GamePrices");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Sneaker.Sneaker", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,13 +283,19 @@ namespace SneakerWebAPI.Migrations
                     b.Property<string>("Colorway")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Condition")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
+
                     b.Property<string>("Creator")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool?>("Holding")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Nickname")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -92,6 +304,12 @@ namespace SneakerWebAPI.Migrations
 
                     b.Property<string>("ProductDesc")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PurchasedFrom")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<string>("ReleaseDate")
                         .HasColumnType("nvarchar(max)");
@@ -102,9 +320,6 @@ namespace SneakerWebAPI.Migrations
                     b.Property<string>("ResellURL")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Retail")
-                        .HasColumnType("int");
-
                     b.Property<string>("SKU")
                         .HasColumnType("nvarchar(max)");
 
@@ -112,20 +327,26 @@ namespace SneakerWebAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("SiteId")
+                        .HasColumnType("int");
+
                     b.Property<float>("Size")
                         .HasColumnType("real");
 
-                    b.Property<int>("UserID")
+                    b.Property<bool>("Sold")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserID");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Sneakers");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.SneakerPriceHistory", b =>
+            modelBuilder.Entity("SneakerWebAPI.Models.Sneaker.SneakerPrice", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -149,7 +370,7 @@ namespace SneakerWebAPI.Migrations
                     b.ToTable("SneakerPrices");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.User", b =>
+            modelBuilder.Entity("SneakerWebAPI.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -197,26 +418,92 @@ namespace SneakerWebAPI.Migrations
                     b.ToTable("users");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.Sneaker", b =>
+            modelBuilder.Entity("SneakerWebAPI.Models.Card.Card", b =>
                 {
-                    b.HasOne("SneakerWebAPI.User", "user")
+                    b.HasOne("SneakerWebAPI.Models.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserID")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("user");
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SneakerWebAPI.SneakerPriceHistory", b =>
+            modelBuilder.Entity("SneakerWebAPI.Models.Card.CardPrice", b =>
                 {
-                    b.HasOne("SneakerWebAPI.Sneaker", "sneaker")
+                    b.HasOne("SneakerWebAPI.Models.Card.Card", "Card")
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Card");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.FunkoPop.FunkoPop", b =>
+                {
+                    b.HasOne("SneakerWebAPI.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.FunkoPop.FunkoPopPrice", b =>
+                {
+                    b.HasOne("SneakerWebAPI.Models.FunkoPop.FunkoPop", "FunkoPop")
+                        .WithMany()
+                        .HasForeignKey("FunkoPopId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FunkoPop");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Game.Game", b =>
+                {
+                    b.HasOne("SneakerWebAPI.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Game.GamePrice", b =>
+                {
+                    b.HasOne("SneakerWebAPI.Models.Game.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Sneaker.Sneaker", b =>
+                {
+                    b.HasOne("SneakerWebAPI.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SneakerWebAPI.Models.Sneaker.SneakerPrice", b =>
+                {
+                    b.HasOne("SneakerWebAPI.Models.Sneaker.Sneaker", "Sneaker")
                         .WithMany()
                         .HasForeignKey("SneakerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("sneaker");
+                    b.Navigation("Sneaker");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,4 +1,4 @@
-﻿namespace SneakerWebAPI
+﻿namespace SneakerWebAPI.Models
 {
     public class Newsfeed
     {

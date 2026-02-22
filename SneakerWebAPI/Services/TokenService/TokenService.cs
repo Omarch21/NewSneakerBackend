@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SneakerWebAPI.Models;
 using SneakerWebAPI.Services.UserService;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

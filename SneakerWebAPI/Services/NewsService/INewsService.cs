@@ -1,4 +1,6 @@
-﻿namespace SneakerWebAPI.Services.NewsService
+﻿using SneakerWebAPI.Models;
+
+namespace SneakerWebAPI.Services.NewsService
 {
     public interface INewsService
     {

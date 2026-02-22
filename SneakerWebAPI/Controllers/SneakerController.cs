@@ -1,14 +1,9 @@
-﻿using HtmlAgilityPack;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using SneakerWebAPI.Data;
-using System.Drawing;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using PuppeteerSharp;
 using SneakerWebAPI.Services.SneakerService;
+using SneakerWebAPI.DTOs;
+using SneakerWebAPI.Models.Sneaker;
 
 namespace SneakerWebAPI.Controllers
 {
@@ -20,7 +15,8 @@ namespace SneakerWebAPI.Controllers
         private readonly DataContext _context;
         private readonly ISneakerService _sneakerService;
 
-        public SneakerController(DataContext context, ISneakerService sneakerService) {
+        public SneakerController(DataContext context, ISneakerService sneakerService)
+        {
             _httpclient = new HttpClient();
             _httpclient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
             _context = context;
@@ -31,8 +27,8 @@ namespace SneakerWebAPI.Controllers
         {
             return Ok(await _context.Sneakers.ToListAsync());
         }
-       [HttpGet("{id}")]
-       public async Task<ActionResult<Sneaker>> GetSneakerById(int id)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Sneaker>> GetSneakerById(int id)
         {
             var show = await _context.Sneakers.FindAsync(id);
             if (show == null)
@@ -40,12 +36,12 @@ namespace SneakerWebAPI.Controllers
                 return NotFound();
             }
             return Ok(await _context.Sneakers.FindAsync(id));
-            
+
         }
         [HttpPost("GetSneakersByUserId")]
-        public async Task<ActionResult<List<Sneaker>>> GetSneakerByUserId([FromBody]int userId)
+        public async Task<ActionResult<List<Sneaker>>> GetSneakerByUserId([FromBody] int userId)
         {
-            var sneakers = await _context.Sneakers.Where(a => a.UserID == userId).ToListAsync();
+            var sneakers = await _context.Sneakers.Where(a => a.UserId == userId).ToListAsync();
             if (sneakers == null)
             {
                 return NotFound();
@@ -56,12 +52,18 @@ namespace SneakerWebAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<List<Sneaker>>> AddSneaker(Sneaker sneaker)
         {
-            var newSneaker = await _sneakerService.GetSneakerInfo(sneaker.ResellURL ?? "");
+            var newSneaker = await _sneakerService.GetSneakerInfoGoat(sneaker.ResellURL ?? "");
             sneaker.SKU = newSneaker.SKU;
             sneaker.ProductDesc = newSneaker.ProductDesc;
             sneaker.Colorway = newSneaker.Colorway;
+            sneaker.Creator = newSneaker.Creator;
             sneaker.ReleaseDate = newSneaker.ReleaseDate;
-            sneaker.ResellPrice = await _sneakerService.GetPrice(sneaker.Size.ToString(), sneaker.ResellURL);
+
+             
+            if (new[] { "Used", "Badly Damaged", "No Original Box" }.Contains(sneaker.Condition))
+                sneaker.ResellPrice = await _sneakerService.GetUsedPrice(sneaker.SiteId.ToString(), sneaker.Size, sneaker.Condition);
+            else
+                sneaker.ResellPrice = await _sneakerService.GetPrice(sneaker.Size.ToString(), sneaker.ResellURL);
 
             _context.Sneakers.Add(sneaker);
             await _context.SaveChangesAsync();
@@ -79,19 +81,20 @@ namespace SneakerWebAPI.Controllers
             }
 
             cur_sneaker.Brand = sneaker.Brand;
-            cur_sneaker.Nickname = sneaker.Nickname;
+            cur_sneaker.Name = sneaker.Name;
             cur_sneaker.Silhouette = sneaker.Silhouette;
-            cur_sneaker.Retail = sneaker.Retail;
+            cur_sneaker.Cost = sneaker.Cost;
             cur_sneaker.PhotoURL = sneaker.PhotoURL ?? cur_sneaker.PhotoURL;
             cur_sneaker.ResellPrice = sneaker.ResellPrice;
             cur_sneaker.Size = sneaker.Size;
+            cur_sneaker.Quantity = sneaker.Quantity;
             await _context.SaveChangesAsync();
 
             return Ok(await _context.Sneakers.ToListAsync());
 
         }
         [HttpDelete("{id}")]
-    public async Task<ActionResult<List<Sneaker>>> DeleteSneaker(int id)
+        public async Task<ActionResult<List<Sneaker>>> DeleteSneaker(int id)
         {
 
             var sneaker = await _context.Sneakers.FindAsync(id);
@@ -105,6 +108,36 @@ namespace SneakerWebAPI.Controllers
 
             return Ok(await _context.Sneakers.ToListAsync());
 
+        }
+
+        [HttpPost("search")]
+        public async Task<IActionResult> SearchSneakersFromSite(SearchRequest request)
+        {
+            var sneakers = await _sneakerService.SearchSneakersInSite(request.Search);
+            return Ok(sneakers);
+        }
+
+        [HttpPost("search-goat")]
+        public async Task<IActionResult> SearchSneakersFromSiteGoat(SearchRequest request)
+        {
+            var sneakers = await _sneakerService.SearchSneakersInSiteGoat(request.Search);
+            return Ok(sneakers);
+        }
+
+        [HttpGet("prices")]
+        public async Task<ActionResult<List<SneakerPrice>>> GetCardPrices(int sneakerId)
+        {
+            var prices = await _context.SneakerPrices.Where(c => c.SneakerId == sneakerId).ToListAsync();
+            if (prices == null)
+                return NotFound();
+
+            return Ok(prices);
+        }
+
+        [HttpPost("123")]
+        public async Task<ActionResult<List<SneakerPrice>>> GetUsed1(string url)
+        {
+            return Ok(await _sneakerService.GetSneakerInfoGoat(url));
         }
     }
 }

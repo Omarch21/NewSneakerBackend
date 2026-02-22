@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SneakerWebAPI.Data;
 using SneakerWebAPI.DTOs;
+using SneakerWebAPI.Models;
 using SneakerWebAPI.Services.TokenService;
 using System.Security.Claims;
 using System.Security.Cryptography;

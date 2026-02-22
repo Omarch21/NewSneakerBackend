@@ -1,10 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SneakerWebAPI;
 using SneakerWebAPI.Data;
-using System;
-using System.Web;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -13,11 +8,13 @@ using Swashbuckle.AspNetCore.Filters;
 using SneakerWebAPI.Services.UserService;
 using SneakerWebAPI.Services.CardService;
 using SneakerWebAPI.Services.SneakerService;
-using System.Reflection.Metadata.Ecma335;
 using SneakerWebAPI.Services.TokenService;
 using SneakerWebAPI.Services.NewsService;
 using SneakerWebAPI.Services.SneakerReleaseService;
 using Quartz;
+using SneakerWebAPI.ScheduledTasks;
+using SneakerWebAPI.Services.GameService;
+using SneakerWebAPI.Services.FunkoPopService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +26,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ISneakerService, SneakerService>();
+builder.Services.AddScoped<IFunkoPopService, FunkoPopService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<ISneakerReleaseService, SneakerReleaseService>();
 
@@ -74,10 +73,28 @@ builder.Services.AddCors(options => options.AddPolicy(name: "NgOrigins",
 builder.Services.AddQuartz(q =>
 {
     q.ScheduleJob<SneakerPricePoster>(trigger => trigger
-        .WithIdentity("SneakerPricePosterTrigger")
-        .StartNow()
-        .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
-    );
+       .WithIdentity("SneakerPricePosterTrigger")
+       .StartNow()
+       .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+   );
+
+    q.ScheduleJob<GamePricePoster>(trigger => trigger
+       .WithIdentity("GamePricePosterTrigger")
+       .StartNow()
+       .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+   );
+
+    q.ScheduleJob<CardPricePoster>(trigger => trigger
+       .WithIdentity("CardPricePosterTrigger")
+       .StartNow()
+       .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+   );
+
+    q.ScheduleJob<FunkoPopPricePoster>(trigger => trigger
+       .WithIdentity("FunkoPopPricePosterTrigger")
+       .StartNow()
+       .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+   );
 });
 
 builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);

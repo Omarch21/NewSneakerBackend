@@ -8,6 +8,7 @@ using System.Drawing;
 using System;
 using SneakerWebAPI.Services.SneakerService;
 using SneakerWebAPI.Services.NewsService;
+using SneakerWebAPI.Models;
 namespace SneakerWebAPI.Controllers
 {
     [Route("api/[controller]")]

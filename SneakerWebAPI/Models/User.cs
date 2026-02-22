@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SneakerWebAPI
+namespace SneakerWebAPI.Models
 {
     public class User
     {

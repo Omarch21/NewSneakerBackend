@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Playwright;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
+using SneakerWebAPI.Models;
 using System.Net.Http;
 using System.Web;
 using static System.Net.WebRequestMethods;

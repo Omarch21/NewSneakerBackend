@@ -1,6 +1,6 @@
 ﻿namespace SneakerWebAPI.DTOs
 {
-    public class SneakerSearchRequest
+    public class SearchRequest
     {
         public string Search { get; set; } = string.Empty;
     }

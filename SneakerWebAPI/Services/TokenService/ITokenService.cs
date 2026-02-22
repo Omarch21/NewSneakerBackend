@@ -1,4 +1,6 @@
-﻿namespace SneakerWebAPI.Services.TokenService
+﻿using SneakerWebAPI.Models;
+
+namespace SneakerWebAPI.Services.TokenService
 {
     public interface ITokenService
     {

@@ -4,7 +4,7 @@ using Quartz;
 using SneakerWebAPI.Services.SneakerService;
 using System.Text;
 
-namespace SneakerWebAPI
+namespace SneakerWebAPI.ScheduledTasks
 {
     public class SneakerPricePoster : IJob
     {
